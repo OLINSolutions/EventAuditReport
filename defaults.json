@@ -1,0 +1,9 @@
+{
+	"instance":  "<xmatters instance url>",
+	"user":      "<user with event access privs>",
+	"password":  "<your password>",
+	"nicenames": "true",
+	"odir":      ".",
+	"dirsep":    "/",
+	"ofile":     "AuditReport.csv"
+}
