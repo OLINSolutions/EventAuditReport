@@ -8,3 +8,7 @@ Events-AuditReport.csv
 EventAuditReport.log
 
 __init__.py
+
+*.csv
+
+*.log

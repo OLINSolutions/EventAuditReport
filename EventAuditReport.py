@@ -21,15 +21,15 @@ It defines classes_and_methods
              http://www.apache.org/licenses/LICENSE-2.0
 
 @contact:    jolin@xmatters.com
-@deffield    updated: 2017-01-26
+@deffield    updated: 2017-01-28
 '''
 
 import sys
 import os
+import time
 import json
+import pprint
 import requests
-# import logging
-# import logging.getLogger
 import logging.config
 from requests.auth import HTTPBasicAuth
 from builtins import str
@@ -42,8 +42,8 @@ from datetime import datetime
 # Used by command line processor
 __all__ = []
 __version__ = 0.1
-__date__ = '2017-01-26'
-__updated__ = '2017-01-26'
+__date__ = '2017-01-28'
+__updated__ = '2017-01-28'
 
 # Global Constants
 DEBUG = 0
@@ -53,23 +53,28 @@ PROFILE = 0
 """ Global Variables
     Defaults are set from configuration file via processArgs()
 """
-verbose: int = 0
-quiety: bool = False
 eventRangeStart: str = ''
 eventRangeEnd: str = ''
 xmodURL = None
 authUser = None
 authPassword = None
 outDirectory = None
-outFilename = None
-outFile = None
+eventFilename = None
+notifFilename = None
+eventFile = None
+notifFile = None
 dirSep = "/"
-niceNames = None
 basicAuth = None
 logger = None
 xmGetLimit = 1000
-eventPropList = ['eventId', 'id', 'created', 'terminated', 'status',
-            'priority', 'incident', 'expirationInMinutes', 'submitter:targetName']
+eventPropList = ['eventId', 'created', 'terminated', 'submitter.targetName', 
+                 'status', 'priority', 'incident', 
+                 'recipients.total', 'recipients.count',
+                 'recipients:recipientType|targetName|status',
+                 'responseOptions.total', 'responseOptions.count', 
+                 'responseOptions:number|text|action|contribution', 
+                 'expirationInMinutes', 'id', 'form.id'
+                ]
 
 def configure_logger(name: str, log_path: str):
     logging.config.dictConfig({
@@ -104,53 +109,34 @@ def configure_logger(name: str, log_path: str):
     return logging.getLogger(name)
 
 def logAndExit(url, response):
-    global logger
-    json = response.json()
+    body = response.json()
     logger.error("Error %d on initial request to %s.\nPlease verify" +\
                  " instance address, user, and password\n",
                  response.status_code, url)
     logger.error("Response - code: %d, reason: %s, message: %s", 
-                 json['code'], str(json['reason']), str(json['message']))
+                 body['code'], str(body['reason']), str(body['message']))
     sys.exit()
 
 def createEventOutFile():
     # Create the output file, overwriting existing file if any
-    outFile = open(outDirectory + dirSep + 'Events-' + outFilename, 'w')
+    outFile = open(outDirectory + dirSep + eventFilename, 'w')
     return outFile
 
 def writeEventHeader():
-    # Write out the header row
-    propMax = len(eventPropList) - 1
-    i = 0
-    for p in eventPropList:
-        if (p == 'submitter:targetName'):
-            outFile.write('"submitter"')
-        else:
-            outFile.write('"' + p + '"')
-        if (i < propMax):
-            outFile.write(',')
-        i += 1
-    outFile.write('\n')
+    # Write out the event header row
+    eventFile.write(','.join(['"' + p + '"' for p in eventPropList]))
+    eventFile.write('\n')
 
 def writeEvent(anEvent: dict):
-    # Write out the header row
-    keysMax = len(eventPropList) - 1
-    i = 0
-    for p in eventPropList:
-        if (p == 'submitter:targetName'):
-            outFile.write('"' + anEvent['submitter']['targetName'] + '"')
-        else:
-            outFile.write('"' + anEvent[p] + '"')
-        if (i < keysMax):
-            outFile.write(',')
-        i += 1
-    outFile.write('\n')
+    # Write out the event details
+    eventFile.write(','.join(['"' + \
+        str(anEvent[p if (':' not in p) else p.split(':')[0]]) + '"' \
+        for p in eventPropList]))
+    eventFile.write('\n')
 
 def getEventDetails(eventId: str) -> dict:
     """ Get the detailed properties for the event defined by eventId.
     """
-#    global xmodURL, basicAuth, logger
-    
     # Set our resource URI
     url = xmodURL + '/api/xm/1/events/' + eventId
     
@@ -160,21 +146,37 @@ def getEventDetails(eventId: str) -> dict:
         logAndExit(url, response)
 
     # Process the response
-    json = response.json()
+    body = response.json()
+    logger.debug("Event %s - json body: %s", eventId, pprint.pformat(body))
     eventProperties = {}
 
     for p in eventPropList:
+        propName = p if (':' not in p) else p.split(':')[0]
+        eventProperties[propName] = "N/A"
+
         if (p == 'eventId'):
             eventProperties['eventId'] = eventId
         elif (response.status_code == 200):
-            eventProperties[p] = json[p]
-        else:
-            eventProperties[p] = "Not Found"
-
+            if ('.' in p):
+                pParts = p.split('.')
+                if pParts[0] in body:
+                    eventProperties[p] = body[pParts[0]][pParts[1]]
+            elif ':' in p:
+                pParts = p.split(':')
+                if pParts[0] in body:
+                    pData = body[pParts[0]]['data']
+                    pNames = pParts[1].split('|')
+                    eventProperties[pParts[0]] = ','.join([ \
+                        '|'.join([str(aProp[pName] if aProp[pName] is not None else "") for pName in pNames]) \
+                        for aProp in pData \
+                        ])
+            else:
+                if p in body:
+                    eventProperties[p] = body[p]
+                
     return eventProperties
 
 def processEvent(eventId: str, includeNotifications: bool):
-#    global outFile, logger
     logger.info("Processing Event Id: %s", eventId)
     eventDetails = getEventDetails(eventId)
     writeEvent(eventDetails)
@@ -184,10 +186,10 @@ def getEvents(includeNotifications: bool):
         Iterate through the events and if requested, get the
         notifications to be written to the output file.
     """
-    global basicAuth, outFile, logger, xmGetLimit, \
-            eventRangeStart, eventRangeEnd
+    global eventFile
+
     # Create and open the output file, then insert the header row
-    outFile = createEventOutFile()
+    eventFile = createEventOutFile()
     writeEventHeader()
     
     # Set our resource URLs
@@ -198,6 +200,7 @@ def getEvents(includeNotifications: bool):
     cnt = 0
     nEvents = 1
     response = requests.get (url, auth=basicAuth)
+
     # If the initial response fails, then just terminate the process
     if (response.status_code != 200):
         logAndExit(url, response)
@@ -206,16 +209,15 @@ def getEvents(includeNotifications: bool):
     while (response.status_code == 200):
         
         # Iterate through the result set
-        json = response.json()
-        nEvents = json['total']
-        strNEvents = str(json['total'])
-        logger.info ("Retrieved a batch of %d events.", json['total'])
-        nextRecordsUrl = json['nextRecordsUrl']
-        logger.info ("nextRecordsUrl: %s", json['nextRecordsUrl'])
-        for d in json['records']:
+        body = response.json()
+        nEvents = body['total']
+        logger.info ("Retrieved a batch of %d events.", body['total'])
+        nextRecordsUrl = body['nextRecordsUrl']
+        logger.debug ("nextRecordsUrl: %s", body['nextRecordsUrl'])
+        for d in body['records']:
             cnt += 1
-            logger.info('Processing Event #' + str(cnt) + ' of ' + strNEvents + \
-                  ': href="' + d['href'] + '"')
+            logger.info('Processing Event #%d of %d: href="%s"', \
+                  cnt, body['total'], d['href'])
             # Parse off the event id
             eventId = d['href'].split("/")[4]
             processEvent( eventId, includeNotifications )
@@ -234,19 +236,11 @@ def getEvents(includeNotifications: bool):
                      cnt, nEvents)
             
 def processEvents(args):
-    global logger, verbose, quiet, eventRangeStart, eventRangeEnd
     logger.info('Processing Events: Range start=%s, Range end=%s', args.evStart, args.evEnd)
     getEvents(False)
     return
 
-def processNotifications(args):
-    global logger, verbose, quiet, eventRangeStart, eventRangeEnd
-    logger.info('Processing Notifications: Range start=%s, Range end=%s', eventRangeStart, args.evEnd)
-    getEvents(True)
-    return
-
-def processBoth(args):
-    global logger, verbose, quiet, eventRangeStart, eventRangeEnd
+def processAll(args):
     logger.info('Processing Events and Notifications: Range start=%s, Range end=%s', args.evStart, eventRangeEnd)
     getEvents(True)
     return
@@ -278,32 +272,14 @@ class Password(Action):
 def processCommandLine(argv=None):
     '''Command line options.'''
     global logger, verbose, quiet, eventRangeStart, eventRangeEnd, \
-           xmodURL, authUser, authPassword, outDirectory, outFilename, \
-           basicAuth, niceNames, dirSep
+           xmodURL, authUser, authPassword, outDirectory, eventFilename, \
+           notifFilename, basicAuth, dirSep
 
     if argv is None:
         argv = sys.argv
     else:
         sys.argv.extend(argv)
 
-    # First try to read in the defaults from defaults.json
-    cfg = json.load(open('defaults.json'))
-    if (cfg['instance'] != ''):
-        xmodURL = cfg['instance']
-    if (cfg['user'] != ''):
-        authUser = cfg['user']
-    if (cfg['password'] != ''):
-        authPassword = cfg['password']
-    if (cfg['nicenames'] != ''):
-        niceNames = ((cfg['nicenames'].lower() == "true") or
-                     (cfg['nicenames'] == "1"))
-    if (cfg['odir'] != ''):
-        outDirectory = cfg['odir']
-    if (cfg['ofile'] != ''):
-        outFilename = cfg['ofile']
-    if (cfg['dirsep'] != ''):
-        dirSep = cfg['dirsep']
-    
     program_name = os.path.basename(sys.argv[0])
     program_version = "v%s" % __version__
     program_build_date = str(__updated__)
@@ -342,9 +318,30 @@ USAGE
                             help="when set limits the amount of output [default: %(default)s]")
         parser.add_argument('-V', '--version', 
                             action='version', version=program_version_message)
+        parser.add_argument("-d", "--defaults", dest="dFile", 
+                            default="defaults.json",
+                            help="Specifes the name of the file containing default settings [default: %(default)s]")
+        parser.add_argument("-e", "--efile", dest="eFile", 
+                            default=None,
+                            help="If not specified in the defaults file, use -e to specify the base name of the file that will contain event information.  The name will have a timestamp and .csv appended to the end. [default: %(default)s]")
+        parser.add_argument("-l", "--lfile", dest="lFile", 
+                            default=None,
+                            help="If not specified in the defaults file, use -l to specify the base name of the log file.  The name will have a timestamp and .log appended to the end.")
+        parser.add_argument("-n", "--nfile", dest="nFile", 
+                            default=None,
+                            help="If not specified in the defaults file, use -n to specify the base name of the file that will contain notification information.  The name will have a timestamp and .csv appended to the end. [default: %(default)s]")
+        parser.add_argument("-o", "--odir", dest="oDir", 
+                            default=None,
+                            help="If not specified in the defaults file, use -o to specify the file system location where the output files will be written.")
         parser.add_argument('-p', action=Password, nargs='?', dest='password',\
-                            default=authPassword,
-                            help="If not specified in the defaults.json file, use -p to specify a password either on the command line, or be prompted")
+                            default=None,
+                            help="If not specified in the defaults file, use -p to specify a password either on the command line, or be prompted")
+        parser.add_argument("-u", "--user", dest="user", 
+                            default=None,
+                            help="If not specified in the defaults file, use -u to specify the xMatters user id that has permissions to get Event and Notification data.")
+        parser.add_argument("-x", "--xmurl", dest="xmurl", 
+                            default=None,
+                            help='If not specified in the defaults file, use -i to specify the base URL of your xMatters instance.  For example, "https://myco.hosted.xmatters.com" wihtout quotes.')
 
         event_parser = subparsers.add_parser('events',description='Outputs just the events in the specified range',help='Use this command in order to create a file containing the details of the events within the specified date range.')
         event_parser.add_argument('evStart',
@@ -354,34 +351,113 @@ USAGE
                             help="Specify the event range end date/time in ISO 8601 \
                             format: yyyy-MM-dd'T'HH:mm:ssZ (e.g. 2017-01-26T10:45:48.011)")
         event_parser.set_defaults(func=processEvents)
-        notif_parser = subparsers.add_parser('notifications',description='Outputs just the notifications in the specified range',help='Use this command in order to create a file containing the details of the notifications for the events within the specified date range.')
-        notif_parser.add_argument('evStart',
-                            help="Specify the notification range start date/time in ISO 8601 \
-                            format: yyyy-MM-dd'T'HH:mm:ssZ (e.g. 2017-01-25T10:45:48.011)")
-        notif_parser.add_argument('evEnd',
-                            help="Specify the notification range end date/time in ISO 8601 \
-                            format: yyyy-MM-dd'T'HH:mm:ssZ (e.g. 2017-01-26T10:45:48.011)")
-        notif_parser.set_defaults(func=processNotifications)
-        both_parser = subparsers.add_parser('both',description='Outputs the events and notifications in the specified range',help='Use this command in order to create a file containing the details of the events and notifications within the specified date range.')
-        both_parser.add_argument('evStart',
+        all_parser = subparsers.add_parser('all',description='Outputs the events and notifications in the specified range',help='Use this command in order to create a file containing the details of the events and notifications within the specified date range.')
+        all_parser.add_argument('evStart',
                             help="Specify the event and notification range start date/time in ISO 8601 \
                             format: yyyy-MM-dd'T'HH:mm:ssZ (e.g. 2017-01-25T10:45:48.011)")
-        both_parser.add_argument('evEnd',
+        all_parser.add_argument('evEnd',
                             help="Specify the event and notification range end date/time in ISO 8601 \
                             format: yyyy-MM-dd'T'HH:mm:ssZ (e.g. 2017-01-26T10:45:48.011)")        
-        both_parser.set_defaults(func=processBoth)
+        all_parser.set_defaults(func=processAll)
         
         # Process arguments
-        logger.info('Before parser.parse_args()')
         args = parser.parse_args()
-        logger.info('After parser.parse_args(), commandName=%s', args.commandName)
 
         # Dereference the arguments
-        verbose = args.verbose
-        quiet = args.quiet
+        logFilename = None
+        if (args.eFile is not None): eventFilename = args.eFile
+        if (args.lFile is not None): logFilename = args.lFile
+        if (args.nFile is not None): notifFilename = args.nFile
+        if (args.oDir is not None): outDirectory = args.oDir
+        if (args.password is not None): authPassword = args.password
+        if (args.user is not None): authUser = args.user
+        if (args.xmurl is not None): xmodURL = args.xmurl
         eventRangeStart = args.evStart
         eventRangeEnd = args.evEnd
 
+        # Try to read in the defaults from defaults.json
+        cfg = json.load(open(args.dFile))
+        if (authUser is None) and (cfg['user'] != ''):
+            authUser = cfg['user']
+        if (authPassword is None) and (cfg['password'] != ''):
+            authPassword = cfg['password']
+        if (dirSep is None) and (cfg['dirsep'] != ''):
+            dirSep = cfg['dirsep']
+        if (eventFilename is None) and (cfg['efile'] != ''):
+            eventFilename = cfg['efile']
+        if (logFilename is None) and (cfg['lfile'] != ''):
+            logFilename = cfg['lfile']
+        if (notifFilename is None) and (cfg['nfile'] != ''):
+            notifFilename = cfg['nfile']
+        if (outDirectory is None) and (cfg['odir'] != ''):
+            outDirectory = cfg['odir']
+        if (xmodURL is None) and (cfg['xmurl'] != ''):
+            xmodURL = cfg['xmurl']
+
+        # Fix file names        
+        timeStr = time.strftime("-%Y%m%d-%H%M")
+        if (eventFilename is not None):
+            eventFilename = outDirectory + dirSep + eventFilename + timeStr + '.csv'
+        if (logFilename is not None):
+            logFilename = outDirectory + dirSep + logFilename + timeStr + '.log'
+        if (notifFilename is not None):
+            notifFilename = outDirectory + dirSep + notifFilename + timeStr + '.csv'
+        
+        # Initialize logging
+        logger = configure_logger('default', logFilename)
+        logger.info('EventAuditReport Started.')
+        logger.info('After parser.parse_args(), commandName=%s', args.commandName)
+
+        # Final verification of arguments
+        if (xmodURL is None):
+            errStr = "xMatters URL was not specified on the command line or via defaults"
+            logger.error(errStr)
+            sys.stderr.write("\n%s\n\n"\
+                             %(errStr) + parser.format_help())
+            sys.exit(-2)
+        else:
+            logger.info ('xMatters Instance URL is: %s', xmodURL)
+        if (authUser is None):
+            errStr = "xMatters User was not specified on the command line or via defaults"
+            logger.error(errStr)
+            sys.stderr.write("\n%s\n\n"\
+                             %(errStr) + parser.format_help())
+            sys.exit(-3)
+        else:
+            logger.info ('User is: %s', authUser)
+        if (authPassword is None):
+            errStr = "xMatters Password was not specified on the command line or via defaults"
+            logger.error(errStr)
+            sys.stderr.write("\n%s\n\n"\
+                             %(errStr) + parser.format_help())
+            sys.exit(-4)
+        else:
+            logger.info ('Password len is: %d', len(authPassword))
+        if (outDirectory is None):
+            errStr = "Output directory was not specified on the command line or via defaults"
+            logger.error(errStr)
+            sys.stderr.write("\n%s\n\n"\
+                             %(errStr) + parser.format_help())
+            sys.exit(-5)
+        else:
+            logger.info ('Output directory is: %s', outDirectory)
+        if (eventFilename is None):
+            errStr = "Event output filename was not specified on the command line or via defaults"
+            logger.error(errStr)
+            sys.stderr.write("\n%s\n\n"\
+                             %(errStr) + parser.format_help())
+            sys.exit(-6)
+        else:
+            logger.info ('Event output filename is: %s', eventFilename)
+        if (notifFilename is None):
+            errStr = "Notification output filename was not specified on the command line or via defaults"
+            logger.error(errStr)
+            sys.stderr.write("\n%s\n\n"\
+                             %(errStr) + parser.format_help())
+            sys.exit(-7)
+        else:
+            logger.info ('Notification output filename is: %s', notifFilename)
+        
         # Validate the format for date and times is correct
         if (not validate_date(eventRangeStart)):
             errStr = "Invalid Event Range Start Date (evStart=%s). "\
@@ -391,7 +467,7 @@ USAGE
             logger.error(errStr)
             sys.stderr.write("\n%s\n\n"\
                              %(errStr) + parser.format_help())
-            sys.exit(-2)
+            sys.exit(-8)
         if (not validate_date(eventRangeEnd)):
             errStr = "Invalid Event Range End Date (evEnd=%s). "\
             "Expecting an ISO 8601 formatted value: yyyy-MM-dd'T'HH:mm:ssZ "\
@@ -400,7 +476,7 @@ USAGE
             logger.error(errStr)
             sys.stderr.write("\n%s\n\n"\
                              %(errStr) + parser.format_help())
-            sys.exit(-3)
+            sys.exit(-9)
 
         # Setup the basic auth object for subsequent REST calls
         basicAuth = HTTPBasicAuth(authUser, authPassword)
@@ -421,13 +497,7 @@ USAGE
         sys.exit(-1)
 
 def main(argv=None): # IGNORE:C0111
-    global verbose, queit, logger, dirSep, \
-           outFile, outDirectory, outFilename
 
-    # Initialize logging
-    logger = configure_logger('default', 'EventAuditReport.log')
-    logger.info('EventAuditReport Started.')
-    
     # Process commandline arguments
     args = processCommandLine(argv)
     logger.debug('before args.func(args)')

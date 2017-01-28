@@ -1,9 +1,10 @@
 {
-	"instance":  "<xmatters instance url>",
-	"user":      "<user with event access privs>",
-	"password":  "<your password>",
-	"nicenames": "true",
-	"odir":      ".",
-	"dirsep":    "/",
-	"ofile":     "AuditReport.csv"
+	"xmurl":    "https://<mycompany>.<myserver>.xmatters.com",
+	"user":     "MyUser",
+	"password": "MyPassword",
+	"odir":     ".",
+	"dirsep":   "/",
+	"efile":    "EventsAuditReport",
+	"lfile":    "AuditReport",
+	"nfile":    "NotificationsAuditReport"
 }
