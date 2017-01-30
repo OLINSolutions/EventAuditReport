@@ -1,10 +1,11 @@
 {
-	"xmurl":    "https://<mycompany>.<myserver>.xmatters.com",
-	"user":     "MyUser",
-	"password": "MyPassword",
-	"odir":     ".",
-	"dirsep":   "/",
-	"efile":    "EventsAuditReport",
-	"lfile":    "AuditReport",
-	"nfile":    "NotificationsAuditReport"
+	"xmodURL":        "https://<mycompany>.<myserver>.xmatters.com",
+	"user":           "MyUser",
+	"password":       "MyPassword",
+	"outDirectory":   ".",
+	"dirSep":         "/",
+	"eventsFilename": "EventsAuditReport",
+	"logFilename":    "AuditReport",
+	"notifsFilename": "NotificationsAuditReport",
+	"verbosity":      0
 }
