@@ -1,8 +1,19 @@
-'''
-Created on Jan 28, 2017
+"""Queries for and processes xMatters events
+                    
+@author:     jolin
 
-@author: jolin
-'''
+@copyright:  2017 xMatters, Inc. All rights reserved.
+
+@license:    Apache License 2.0
+             http://www.apache.org/licenses/LICENSE-2.0
+
+@contact:    jolin@xmatters.com
+@deffield    updated: 2017-01-28
+
+.. _Google Python Style Guide:
+   http://google.github.io/styleguide/pyguide.html
+
+"""
 
 import sys
 import pprint

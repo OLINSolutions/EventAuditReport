@@ -10,8 +10,6 @@ given, then all events that occurred on that date and later are retrieved.
 If a smaller range is requried, then specify both the start and end date.
 Note that the date is actually a timestamp and should contain the time element.
 
-It defines classes_and_methods
-
 @author:     jolin
 
 @copyright:  2017 xMatters, Inc. All rights reserved.
@@ -21,6 +19,10 @@ It defines classes_and_methods
 
 @contact:    jolin@xmatters.com
 @deffield    updated: 2017-01-28
+
+.. _Google Python Style Guide:
+   http://google.github.io/styleguide/pyguide.html
+
 """
 
 import sys

@@ -1,4 +1,6 @@
+# -*- coding: utf-8 -*-
 """Command line and argument processor
+
 @author:     jolin
 
 @deffield    updated: 2017-01-28
@@ -33,7 +35,7 @@ def process_all(args):
     return
 
 def __validate_date(d):
-    if (len(d) != 23): return False
+    if len(d) != 23: return False
     try:
         datetime.strptime(d, '%Y-%m-%dT%H:%M:%S.%f')
         return True
@@ -72,10 +74,10 @@ def process_command_line(argv=None, progDoc=''):
         program_version, program_build_date)
     program_doc: str = progDoc
     program_shortdesc = program_doc.split("\n")[1]
-    program_user_name = (program_doc.split("\n")[13][13:]).strip()
-    program_copyright = (program_doc.split("\n")[15][13:]).strip()
-    program_license1 = (program_doc.split("\n")[17][13:]).strip()
-    program_license2 = (program_doc.split("\n")[18][13:]).strip()
+    program_user_name = (program_doc.split("\n")[10][13:]).strip()
+    program_copyright = (program_doc.split("\n")[12][13:]).strip()
+    program_license1 = (program_doc.split("\n")[14][13:]).strip()
+    program_license2 = (program_doc.split("\n")[15][13:]).strip()
     program_license = """%s
 
   Created by %s on %s.
@@ -196,61 +198,56 @@ USAGE
         # Dereference the arguments into the configuration object
         user = None
         password = None
-        if (args.events_filename is not None): 
-            config.events_filename = args.events_filename
-        if (args.log_filename is not None): 
-            config.log_filename = args.lFilog_filenamele
-        if (args.notifs_filename is not None): 
-            config.notifs_filename = args.notifs_filename
-        if (args.out_directory is not None): 
-            config.out_directory = args.out_directory
-        if (args.noisy > 0): config.noisy = args.noisy
-        if (args.password is not None): password = args.password
-        if (args.user is not None): user = args.user
-        if (args.verbose > 0): config.verbosity = args.verbose
-        if (args.xmod_url is not None): config.xmod_url = args.xmod_url
+        if args.events_filename: config.events_filename = args.events_filename
+        if args.log_filename: config.log_filename = args.lFilog_filenamele
+        if args.notifs_filename: config.notifs_filename = args.notifs_filename
+        if args.out_directory: config.out_directory = args.out_directory
+        if args.noisy > 0: config.noisy = args.noisy
+        if args.password: password = args.password
+        if args.user: user = args.user
+        if args.verbose > 0: config.verbosity = args.verbose
+        if args.xmod_url: config.xmod_url = args.xmod_url
         config.event_range_start = args.start
         config.event_range_end = args.end
 
         # Try to read in the defaults from defaults.json
         try:
-            cfg = json.load(open(args.defaults_filename))
+            with open(args.defaults_filename) as defaults:
+                cfg = json.load(defaults)
         except FileNotFoundError:
             raise(_CLIError(
                 config.ERR_CLI_MISSING_DEFAULTS_MSG % args.defaults_filename, 
                 config.ERR_CLI_MISSING_DEFAULTS_CODE))
 
         # Process the defaults
-        if (user is None) and ('user' in cfg):
+        if user is None and 'user' in cfg:
             user = cfg['user']
-        if (password is None) and ('password' in cfg):
+        if password is None and 'password' in cfg:
             password = cfg['password']
-        if (config.dir_sep is None) and ('dirSep' in cfg):
+        if config.dir_sep is None and 'dirSep' in cfg:
             config.dir_sep = cfg['dirSep']
-        if (config.events_filename is None) and ('eventsFilename' in cfg):
+        if config.events_filename is None and 'eventsFilename' in cfg:
             config.events_filename = cfg['eventsFilename']
-        if (config.log_filename is None) and ('logFilename' in cfg):
+        if config.log_filename is None and 'logFilename' in cfg:
             config.log_filename = cfg['logFilename']
-        if (config.notifs_filename is None) and ('notifsFilename' in cfg):
+        if config.notifs_filename is None and 'notifsFilename' in cfg:
             config.notifs_filename = cfg['notifsFilename']
-        if (config.out_directory is None) and ('outDirectory' in cfg):
+        if config.out_directory is None and 'outDirectory' in cfg:
             config.out_directory = cfg['outDirectory']
-        if (config.xmod_url is None) and ('xmodURL' in cfg):
+        if config.xmod_url is None and 'xmodURL' in cfg:
             config.xmod_url = cfg['xmodURL']
-        if (config.verbosity == 0) and \
-           ('verbosity' in cfg) and \
-           (cfg['verbosity'] in [1,2,3]):
-            config.verbosity = cfg['verbosity']
+        if config.verbosity == 0 and 'verbosity' in cfg:
+            if cfg['verbosity'] in [1,2,3]: config.verbosity = cfg['verbosity']
 
         # Fix file names        
         timeStr = time.strftime("-%Y%m%d-%H%M")
-        if (config.events_filename is not None):
+        if config.events_filename:
             config.events_filename = (config.out_directory + config.dir_sep + 
             config.events_filename + timeStr + '.csv')
-        if (config.log_filename is not None):
+        if config.log_filename:
             config.log_filename = (config.out_directory + config.dir_sep + 
             config.log_filename + timeStr + '.log')
-        if (config.notifs_filename is not None):
+        if config.notifs_filename:
             config.notifs_filename = (config.out_directory + config.dir_sep + 
             config.notifs_filename + timeStr + '.csv')
         
@@ -261,45 +258,43 @@ USAGE
                     args.command_name)
 
         # Final verification of arguments
-        if (config.xmod_url is None):
+        if config.xmod_url:
+            logger.info ("xMatters Instance URL is: %s", config.xmod_url)
+        else:
             raise(_CLIError(config.ERR_CLI_MISSING_XMOD_URL_MSG,
                             config.ERR_CLI_MISSING_XMOD_URL_CODE))
+        if user: logger.info("User is: %s", user)
         else:
-            logger.info ("xMatters Instance URL is: %s", config.xmod_url)
-        if (user is None):
             raise(_CLIError(config.ERR_CLI_MISSING_USER_MSG,
                             config.ERR_CLI_MISSING_USER_CODE))
+        if password: logger.info("Password was provided.")
         else:
-            logger.info ("User is: %s", user)
-        if (password is None):
             raise(_CLIError(config.ERR_CLI_MISSING_PASSWORD_MSG,
                             config.ERR_CLI_MISSING_PASSWORD_CODE))
+        if config.out_directory:
+            logger.info("Output directory is: %s", config.out_directory)
         else:
-            logger.info ("Password was provided.")
-        if (config.out_directory is None):
             raise(_CLIError(config.ERR_CLI_MISSING_OUTPUT_DIR_MSG,
                             config.ERR_CLI_MISSING_OUTPUT_DIR_CODE))
+        if config.events_filename:
+            logger.info("Events output filename is: %s", 
+                        config.events_filename)
         else:
-            logger.info ("Output directory is: %s", config.out_directory)
-        if (config.events_filename is None):
             raise(_CLIError(config.ERR_CLI_MISSING_EVENTS_FILENAME_MSG,
                             config.ERR_CLI_MISSING_EVENTS_FILENAME_CODE))
+        if config.notifs_filename:
+            logger.info("Notifications output filename is: %s", 
+                        config.notifs_filename)
         else:
-            logger.info ("Events output filename is: %s", 
-                         config.events_filename)
-        if (config.notifs_filename is None):
             raise(_CLIError(config.ERR_CLI_MISSING_NOTIFS_FILENAME_MSG,
                             config.ERR_CLI_MISSING_NOTIFS_FILENAME_CODE))
-        else:
-            logger.info ("Notifications output filename is: %s", 
-                         config.notifs_filename)
         
         # Validate the format for date and times is correct
-        if (not __validate_date(config.event_range_start)):
+        if not __validate_date(config.event_range_start):
             raise(_CLIError(
                 config.ERR_CLI_INVALID_START_DATE_MSG%(config.event_range_start),
                 config.ERR_CLI_INVALID_START_DATE_CODE))
-        if (not __validate_date(config.event_range_end)):
+        if not __validate_date(config.event_range_end):
             raise(_CLIError(
                 config.ERR_CLI_INVALID_START_DATE_MSG%(config.event_range_end),
                 config.ERR_CLI_INVALID_START_DATE_CODE))
@@ -317,8 +312,7 @@ USAGE
         if config.DEBUG or config.TESTRUN:
             raise(e)
         msg = config.program_name + ": " + repr(e) + "\n"
-        if (logger is not None):
-            logger.error(msg)
+        if logger: logger.error(msg)
         sys.stderr.write(msg)
         indent = len(config.program_name) * " "
         sys.stderr.write(indent + "  for help use --help")
