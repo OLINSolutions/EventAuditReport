@@ -4,60 +4,33 @@
 Reference:
     https://help.xmatters.com/xmAPI/#paginationLinks
     
-@author: jolin
-
-.. _Google Python Style Guide:
-   http://google.github.io/styleguide/pyguide.html
-
-Example Google style docstrings.
-
-This module demonstrates documentation as specified by the `Google Python
-Style Guide`_. Docstrings may extend over multiple lines. Sections are created
-with a section header and a colon followed by a block of indented text.
-
-Example:
-    Examples can be given using either the ``Example`` or ``Examples``
-    sections. Sections support any reStructuredText formatting, including
-    literal blocks::
-
-        $ python example_google.py
-
-Section breaks are created by resuming unindented text. Section breaks
-are also implicitly created anytime a new section starts.
-
-Attributes:
-    module_level_variable1 (int): Module level variables may be documented in
-        either the ``Attributes`` section of the module docstring, or in an
-        inline docstring immediately following the variable.
-
-        Either form is acceptable, but the two should not be mixed. Choose
-        one convention to document module level variables and be consistent
-        with it.
-
-Todo:
-    * For module TODOs
-    * You have to also use ``sphinx.ext.todo`` extension
-
-.. _Google Python Style Guide:
-   http://google.github.io/styleguide/pyguide.html
+This module contains the declaration of class PaginationLinks.
 
 """
 
 import json
 
 class PaginationLinks(object):
+    """Provides links to cur, prev, and next pages of a paginated result set.
+
+    Attributes:
+        next (str): URI to next page of results.
+        previous (str): URI to the previous page of results.
+        self (str): URI to the parent object.
+
+    """
 
     @classmethod
     def from_json_obj(cls, json_self: object):
         """Creates and initializes an instance of a PaginationLinks.
     
         Args:
-            param1: The first parameter.
-            param2: The second parameter.
+            cls (:class:`PaginationLinks`): Class to instantiate.
+            json_self (:obj:`JSON`): Payload for a PaginationLink.
     
         Returns:
-            The return value. True for success, False otherwise.
-    
+            A PaginationLinks instance populated with json_self.
+            
         """
         new_obj = cls(
             json_self['next'] if 'next' in json_self else None,
@@ -67,12 +40,33 @@ class PaginationLinks(object):
     
     @classmethod
     def from_json_str(cls, json_self: str):
+        """Creates and initializes an instance of a PaginationLinks.
+    
+        Args:
+            cls (:class:`PaginationLinks`): Class to instantiate.
+            json_self (:str:`JSON`): String for a PaginationLink.
+    
+        Returns:
+            A PaginationLinks instance populated with json_self.
+            
+        """
         obj = json.loads(json_self)
         return cls.from_json_obj(obj)
     
     def __init__(
             self, next_link: str = None, previous_link: str = None,
             self_link: str = None ):
+        """Initializes a new instance of a PaginationLinks.
+    
+        Args:
+            next_link (str): URI of next page of results.
+            previous_link (str): URI of previous page of results.
+            self_link: (str): URI of self.
+    
+        Returns:
+            A PaginationLinks instance populated with json_self.
+            
+        """
         self.next: str = next_link
         self.previous: str = previous_link
         self.self: str = self_link
