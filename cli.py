@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 """Command line and argument processor
 
-@author:     jolin
-
-@deffield    updated: 2017-01-28
-
 .. _Following Google Python Style Guide:
    http://google.github.io/styleguide/pyguide.htm
 """
@@ -17,22 +13,27 @@ from requests import auth
 import argparse
 import getpass
 from datetime import datetime
+
 import config
 import ear_logger
 import event_processor
 
+
 def process_events(args):
-    ear_logger.get_logger().info("Processing Events only: Range start=%s, "
-                                 "Range end=%s", args.start, args.end)
+    ear_logger.get_logger().info(
+        'Processing Events only: Range start=%s, Range end=%s',
+        args.start, args.end)
     event_processor.get_events(False)
     return
 
+
 def process_all(args):
-    ear_logger.get_logger().info("Processing Events and Notifications: Range "
-                                 "start=%s, Range end=%s", args.start, args.end
-                                 )
+    ear_logger.get_logger().info(
+        'Processing Events and Notifications: Range start=%s, Range end=%s',
+        args.start, args.end)
     event_processor.get_events(True)
     return
+
 
 def __validate_date(d):
     if len(d) != 23: return False
@@ -42,22 +43,27 @@ def __validate_date(d):
     except ValueError:
         return False
 
+
 class _CLIError(Exception):
     """Generic exception to raise and log different fatal errors."""
-    def __init__(self, msg, rc = config.ERR_CLI_EXCEPTION):
+    def __init__(self, msg, rc=config.ERR_CLI_EXCEPTION):
         super(_CLIError).__init__(type(self))
         self.rc = rc
         self.msg = "E: %s" % msg
+
     def __str__(self):
         return self.msg
+
     def __unicode__(self):
         return self.msg
+
 
 class __Password(argparse.Action):
     def __call__(self, parser, namespace, values, option_string):
         if values is None:
             values = getpass.getpass()
         setattr(namespace, self.dest, values)
+
 
 def process_command_line(argv=None, progDoc=''):
     logger = None
@@ -90,65 +96,72 @@ def process_command_line(argv=None, progDoc=''):
   or conditions of any kind, either express or implied.
 
 USAGE
-""" % (program_shortdesc, program_user_name, str(config.date), 
+""" % (program_shortdesc, program_user_name, str(config.date),
        program_copyright, program_license1, program_license2)
 
     try:
         # Setup argument parser
-        parser = argparse.ArgumentParser(description=program_license, formatter_class=argparse.RawDescriptionHelpFormatter)
+        parser = argparse.ArgumentParser(
+            description=program_license,
+            formatter_class=argparse.RawDescriptionHelpFormatter)
         subparsers = parser.add_subparsers(dest='command_name')
         # Add common arguments
-        parser.add_argument('-V', '--version', 
+        parser.add_argument('-V', '--version',
                             action='version', version=program_version_message)
-        parser.add_argument("-v", dest="verbose", 
+        parser.add_argument("-v", dest="verbose",
                             action="count", default=0,
-                            help=("set verbosity level.  Each occurrence of v "
-                                  "increases the logging level.  By default it"
-                                  " is ERRORs only, a single v (-v) means add "
-                                  "WARNING logging, a double v (-vv) means add"
-                                  " INFO logging, and a tripple v (-vvv) means"
-                                  " add DEBUG logging [default: %(default)s]"))
-        parser.add_argument("-c", "--console", dest="noisy", 
+                            help=(
+                                "set verbosity level.  Each occurrence of v "
+                                "increases the logging level.  By default it "
+                                "is ERRORs only, a single v (-v) means add "
+                                "WARNING logging, a double v (-vv) means add "
+                                "INFO logging, and a tripple v (-vvv) means "
+                                "add DEBUG logging [default: %(default)s]"))
+        parser.add_argument("-c", "--console", dest="noisy",
                             action='store_true',
-                            help=("If specified, will echo all log output to t"
-                                  "he console at the requested verbosity based"
-                                  " on the -v option"))
-        parser.add_argument("-d", "--defaults", dest="defaults_filename", 
+                            help=(
+                                "If specified, will echo all log output to "
+                                "the console at the requested verbosity based "
+                                "on the -v option"))
+        parser.add_argument("-d", "--defaults", dest="defaults_filename",
                             default="defaults.json",
-                            help=("Specifes the name of the file containing "
-                                  "default settings [default: %(default)s]"))
-        parser.add_argument("-e", "--efile", dest="events_filename", 
+                            help=(
+                                "Specifes the name of the file containing "
+                                "default settings [default: %(default)s]"))
+        parser.add_argument("-e", "--efile", dest="events_filename",
                             default=None,
-                            help=("If not specified in the defaults file, use "
-                                  "-e to specify the base name of the file "
-                                  "that will contain event information.  The "
-                                  "name will have a timestamp and .csv "
-                                  "appended to the end. [default: %(default)s]"
-                                  ))
-        parser.add_argument("-l", "--lfile", dest="log_filename", 
+                            help=(
+                                "If not specified in the defaults file, use "
+                                "-e to specify the base name of the file that "
+                                "will contain event information.  The name "
+                                "will have a timestamp and .csv appended to "
+                                "the end. [default: %(default)s]"))
+        parser.add_argument("-l", "--lfile", dest="log_filename",
                             default=None,
-                            help=("If not specified in the defaults file, use "
-                                  "-l to specify the base name of the log file"
-                                  ".  The name will have a timestamp and .log "
-                                  "appended to the end."))
-        parser.add_argument("-n", "--nfile", dest="notifs_filename", 
+                            help=(
+                                "If not specified in the defaults file, use "
+                                "-l to specify the base name of the log file. "
+                                "The name will have a timestamp and .log "
+                                "appended to the end."))
+        parser.add_argument("-n", "--nfile", dest="notifs_filename",
                             default=None,
-                            help=("If not specified in the defaults file, use "
-                                  "-n to specify the base name of the file "
-                                  "that will contain notification information."
-                                  "  The name will have a timestamp and .csv "
-                                  "appended to the end. [default: %(default)s]"
-                                  ))
-        parser.add_argument("-o", "--odir", dest="out_directory", 
+                            help=(
+                                "If not specified in the defaults file, use -n"
+                                " to specify the base name of the file that "
+                                "will contain notification information.  The "
+                                "name will have a timestamp and .csv appended "
+                                "to the end. [default: %(default)s]"))
+        parser.add_argument("-o", "--odir", dest="out_directory",
                             default=None,
-                            help=("If not specified in the defaults file, use "
-                                  "-o to specify the file system location "
-                                  "where the output files will be written."))
-        parser.add_argument('-p', action=__Password, nargs='?', dest='password',
-                            default=None,
-                            help=("If not specified in the defaults file, use "
-                                  "-p to specify a password either on the "
-                                  "command line, or be prompted"))
+                            help=(
+                                "If not specified in the defaults file, use -o"
+                                " to specify the file system location where "
+                                "the output files will be written."))
+        parser.add_argument('-p', action=__Password, nargs='?',
+                            dest='password', default=None,
+                            help=(
+                                "If not specified in the defaults file, use -p"
+                                " to specify a password either on the command line, or be prompted"))
         parser.add_argument("-u", "--user", dest="user", 
                             default=None,
                             help=("If not specified in the defaults file, use "

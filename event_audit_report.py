@@ -26,26 +26,26 @@ Note that the date is actually a timestamp and should contain the time element.
 """
 
 import sys
-sys.path.append('.')
+
 import config
 import ear_logger
 import cli
 
+# sys.path.append('.')
 
 __all__ = []
 __version__ = config.version
 __date__ = config.date
 __updated__ = config.updated
 
-def main(argv=None): # IGNORE:C0111
 
-    # Process command line arguments
+def main(argv=None):  # IGNORE:C0111
+
     args = cli.process_command_line(argv, __doc__)
     
     # Get local logger (must wait until after process_command_line runs)
     logger = ear_logger.get_logger()
 
-    # call the requested function
     logger.debug('before args.func(args)')
     args.func(args)
     logger.debug('after args.func(args)')
