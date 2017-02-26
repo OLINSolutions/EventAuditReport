@@ -14,3 +14,9 @@ __init__.py
 *.log
 
 *.pyc
+
+.project
+
+.pydevproject
+
+.settings/org.eclipse.core.resources.prefs
