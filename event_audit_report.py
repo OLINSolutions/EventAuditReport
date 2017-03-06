@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # encoding: utf-8
 """Generate an xMatters event audit report for a date range.
-                    
+
 event_audit_report is a command utility that uses the xMatters REST APIs to
 request the event and notification information for the Notification Events
 that occurred over a given date range.
@@ -10,15 +10,12 @@ given, then all events that occurred on that date and later are retrieved.
 If a smaller range is requried, then specify both the start and end date.
 Note that the date is actually a timestamp and should contain the time element.
 
-@author:     jolin
+Example:
+    Arguments are described via the -H command
+    Here are some examples::
 
-@copyright:  2017 xMatters, Inc. All rights reserved.
-
-@license:    Apache License 2.0
-             http://www.apache.org/licenses/LICENSE-2.0
-
-@contact:    jolin@xmatters.com
-@deffield    updated: 2017-01-28
+        $ python3 event_audit_report.py -vv -c -d defaults.json events
+            2017-01-27T16:15:00.000 2017-01-27T16:30:00.000
 
 .. _Google Python Style Guide:
    http://google.github.io/styleguide/pyguide.html
@@ -28,28 +25,19 @@ Note that the date is actually a timestamp and should contain the time element.
 import sys
 
 import config
-import ear_logger
 import cli
 
-# sys.path.append('.')
-
 __all__ = []
-__version__ = config.version
-__date__ = config.date
-__updated__ = config.updated
+__version__ = config.VERSION
+__date__ = config.DATE
+__updated__ = config.UPDATED
 
-
-def main(argv=None):  # IGNORE:C0111
+def main(argv=None):
+    """ Begins the Event Audit Report process """
 
     args = cli.process_command_line(argv, __doc__)
-    
-    # Get local logger (must wait until after process_command_line runs)
-    logger = ear_logger.get_logger()
-
-    logger.debug('before args.func(args)')
     args.func(args)
-    logger.debug('after args.func(args)')
-    
+
 if __name__ == "__main__":
     if config.DEBUG:
         sys.argv.append("-h")

@@ -1,25 +1,22 @@
 # -*- coding: utf-8 -*-
 """Holds variables shared between modules
 
-@author:     jolin
-
-@copyright:  2017 xMatters, Inc. All rights reserved.
-
-@license:    Apache License 2.0
-             http://www.apache.org/licenses/LICENSE-2.0
-
-@contact:    jolin@xmatters.com
-@deffield    updated: 2017-01-28
-
 .. _Google Python Style Guide:
    http://google.github.io/styleguide/pyguide.html
 
 """
 
+import sys
+import os
+
 # Used by command line processor
-version = 0.1
-date = '2017-01-28'
-updated = '2017-01-28'
+VERSION = 0.1
+DATE = '2017-01-28'
+UPDATED = '2017-01-28'
+AUTHOR = 'jolin@xmatters.com'
+COPYRIGHT = '2017 xMatters, Inc. All rights reserved.'
+LICENSE = 'Apache License 2.0'
+LICENSE_REF = 'http://www.apache.org/licenses/LICENSE-2.0'
 
 # Global Constants
 DEBUG = 0
@@ -29,9 +26,9 @@ PROFILE = 0
 """ Global Variables
     Defaults are set from configuration file via processArgs()
 """
-program_name = None
-event_range_start: str = None
-event_range_end: str = None
+program_name = os.path.basename(sys.argv[0])
+event_range_start = None
+event_range_end = None
 xmod_url = None
 out_directory = None
 events_filename = None
@@ -86,6 +83,7 @@ ERR_INITIAL_REQUEST_FAILED_MSG = ("Error %d on initial request to %s.\nPlease "
                                   "verify instance address, user, and password")
 
 def main():
+    """ To pass conventions, in case we need to execute main """
     pass
 
 if __name__ == '__main__':

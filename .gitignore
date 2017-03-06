@@ -20,3 +20,5 @@ __init__.py
 .pydevproject
 
 .settings/org.eclipse.core.resources.prefs
+
+.settings/de.loskutov.anyedit.AnyEditTools.prefs
