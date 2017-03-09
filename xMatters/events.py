@@ -6,7 +6,7 @@ methods (typically static) for retrieving a list of Event instances, as well as
 methods for manipulating instances of events.
 
 Ref:
-    https://help.xmatters.com/xmAPI/#event-objects
+    https://help.xmatters.com/xmAPI/index.html#event-objects
 
 .. _Google Python Style Guide:
    http://google.github.io/styleguide/pyguide.html
@@ -15,8 +15,8 @@ Ref:
 
 import json
 
-from xMatters.References import PersonReference
-from xMatters.Recipients import Recipient
+from EventAuditReport.xMatters.recipients import PersonReference
+from EventAuditReport.xMatters.recipients import Recipient
 
 class Event(object):
     """xMatters Event representation
@@ -26,8 +26,8 @@ class Event(object):
     controlling methods (typically static) for retrieving a list of Event
     instances, as well as methods for manipulating instances of events.
 
-    Attributes:
-        See https://help.xmatters.com/xmAPI/?python#event-objects
+    Reference:
+        See https://help.xmatters.com/xmAPI/index.html#event-object
     """
 
     @classmethod
