@@ -160,13 +160,13 @@ USAGE
         parser.add_argument("-u", "--user", dest="user",
                             default=None,
                             help=("If not specified in the defaults file, use "
-                                  "-u to specify the xMatters user id that has"
+                                  "-u to specify the xmatters user id that has"
                                   " permissions to get Event and Notification "
                                   "data."))
         parser.add_argument("-x", "--xmodurl", dest="xmod_url",
                             default=None,
                             help=("If not specified in the defaults file, use "
-                                  "-i to specify the base URL of your xMatters"
+                                  "-i to specify the base URL of your xmatters"
                                   " instance.  For example, 'https://myco.host"
                                   "ed.xmatters.com' without quotes."))
         #Add in event command parsers
@@ -280,7 +280,7 @@ USAGE
 
         # Final verification of arguments
         if config.xmod_url:
-            logger.info("xMatters Instance URL is: %s", config.xmod_url)
+            logger.info("xmatters Instance URL is: %s", config.xmod_url)
         else:
             raise(_CLIError(config.ERR_CLI_MISSING_XMOD_URL_MSG,
                             config.ERR_CLI_MISSING_XMOD_URL_CODE))

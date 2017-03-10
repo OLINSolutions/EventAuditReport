@@ -14,7 +14,7 @@ VERSION = 0.1
 DATE = '2017-01-28'
 UPDATED = '2017-01-28'
 AUTHOR = 'jolin@xmatters.com'
-COPYRIGHT = '2017 xMatters, Inc. All rights reserved.'
+COPYRIGHT = '2017 xmatters, Inc. All rights reserved.'
 LICENSE = 'Apache License 2.0'
 LICENSE_REF = 'http://www.apache.org/licenses/LICENSE-2.0'
 
@@ -46,13 +46,13 @@ ERR_CLI_EXCEPTION = -1
 ERR_CLI_MISSING_DEFAULTS_CODE = -2
 ERR_CLI_MISSING_DEFAULTS_MSG = "Missing defaults file: "
 ERR_CLI_MISSING_XMOD_URL_CODE = -3
-ERR_CLI_MISSING_XMOD_URL_MSG = ("xMatters URL was not specified on the command"
+ERR_CLI_MISSING_XMOD_URL_MSG = ("xmatters URL was not specified on the command"
                                 " line or via defaults")
 ERR_CLI_MISSING_USER_CODE = -4
-ERR_CLI_MISSING_USER_MSG = ("xMatters User was not specified on the command "
+ERR_CLI_MISSING_USER_MSG = ("xmatters User was not specified on the command "
                             "line or via defaults")
 ERR_CLI_MISSING_PASSWORD_CODE = -5
-ERR_CLI_MISSING_PASSWORD_MSG = ("xMatters Password was not specified on the "
+ERR_CLI_MISSING_PASSWORD_MSG = ("xmatters Password was not specified on the "
                                 "command line or via defaults")
 ERR_CLI_MISSING_OUTPUT_DIR_CODE = -6
 ERR_CLI_MISSING_OUTPUT_DIR_MSG = ("Output directory was not specified on the "

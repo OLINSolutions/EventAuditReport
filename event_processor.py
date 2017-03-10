@@ -1,4 +1,4 @@
-"""Queries for and processes xMatters events
+"""Queries for and processes xmatters events
 
 .. _Google Python Style Guide:
    http://google.github.io/styleguide/pyguide.html
@@ -89,7 +89,7 @@ def _write_event(event_file: TextIOBase, event: dict):
 def _get_event_details(event_id: str, event_file: TextIOBase) -> dict:
     """Get the detailed properties for the event defined by event_id.
 
-    Retrieves the Event object details from xMatters based on the event_id.
+    Retrieves the Event object details from xmatters based on the event_id.
     The details are converted to a property array that is then returned.
 
     Args:
@@ -149,7 +149,7 @@ def _get_event_details(event_id: str, event_file: TextIOBase) -> dict:
 def _process_event(event_file: TextIOBase, event_id: str, include_notifs: bool):
     """Writes out the detailed properties for the event defined by event_id.
 
-    Retrieves the Event object details from xMatters based on the event_id.
+    Retrieves the Event object details from xmatters based on the event_id.
     The details are converted to a property array that is then written out
     to event_file.
     If include_notifs is true, then also find and return the associated

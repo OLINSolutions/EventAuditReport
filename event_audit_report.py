@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # encoding: utf-8
-"""Generate an xMatters event audit report for a date range.
+"""Generate an xmatters event audit report for a date range.
 
-event_audit_report is a command utility that uses the xMatters REST APIs to
+event_audit_report is a command utility that uses the xmatters REST APIs to
 request the event and notification information for the Notification Events
 that occurred over a given date range.
 The utility first parses the requested range of dates.  If a single date is
