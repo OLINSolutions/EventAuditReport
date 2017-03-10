@@ -338,7 +338,7 @@ class ReferenceByIdAndSelfLink(object):
         """
         new_obj = cls(
             json_self['id'] if 'id' in json_self else None,
-            (SelfLink(json_self['links'])
+            (SelfLink.from_json_obj(json_self['links'])
              if 'links' in json_self else SelfLink())
             )
         return new_obj
