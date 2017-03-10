@@ -14,10 +14,10 @@ Reference:
 
 import json
 
-from EventAuditReport.xMatters.common import SelfLink
-from EventAuditReport.xMatters.common import ReferenceByIdAndSelfLink
-from EventAuditReport.xMatters.common import Pagination
-from EventAuditReport.xMatters.common import PaginationLinks
+from xMatters.common import SelfLink
+from xMatters.common import ReferenceByIdAndSelfLink
+from xMatters.common import Pagination
+from xMatters.common import PaginationLinks
 
 class RecipientPointer(object):
     """xMatters RecipientPointer representation
@@ -87,10 +87,14 @@ class PersonReference(object):
         https://help.xmatters.com/xmAPI/index.html#person-reference-object
 
     Args:
+        ref_id (str): The unique identifier of the person.
+        target_name (str): The user id of the person.
+        links (:obj:`SelfLink`): A link that can be used to retrieve the person
+            using this API.
 
     Attributes:
         id (str): The unique identifier of the person.
-        targetName (str): The user id of the person.
+        target_name (str): The user id of the person.
         links (:obj:`SelfLink`): A link that can be used to retrieve the person
             using this API.
     """
@@ -106,12 +110,11 @@ class PersonReference(object):
         Returns:
             PersonReference: An instance populated with json_self.
         """
-        new_obj = cls()
-        new_obj.id = json_self['id'] if 'id' in json_self else None
-        new_obj.targetName = (json_self['targetName']
-                              if 'targetName' in json_self else None)
-        new_obj.links = (SelfLink.from_json_obj(json_self['links'])
-                         if 'links' in json_self else SelfLink())
+        new_obj = cls(
+            json_self['id'] if 'id' in json_self else None,
+            json_self['targetName'] if 'targetName' in json_self else None,
+            (SelfLink.from_json_obj(json_self['links'])
+             if 'links' in json_self else SelfLink()))
         return new_obj
 
     @classmethod
@@ -128,10 +131,11 @@ class PersonReference(object):
         obj = json.loads(json_self)
         return cls.from_json_obj(obj)
 
-    def __init__(self):
-        self.id: str = None
-        self.targetName: str = None
-        self.links: SelfLink = SelfLink()
+    def __init__(self, ref_id: str,
+                 target_name: str, links: SelfLink):
+        self.id: str = ref_id
+        self.target_name: str = target_name
+        self.links: SelfLink = links
 
 class Recipient(object):
     """xMatters Recipient representation
@@ -144,6 +148,31 @@ class Recipient(object):
         https://help.xmatters.com/xmAPI/index.html#recipient-object
 
     Args:
+        ref_id (str): A unique id that represents the recipient.
+        target_name (str): The common name of the recipient.
+        receipient_type (str): The type of this object. Values include:
+            “GROUP”
+            “PEOPLE”
+            “DEVICE”
+            “DYNAMIC_TEAM”
+        status (str): Whether the recipient is active. Inactive recipients do
+            not receive notifications. Use one of the following values:
+                “ACTIVE”
+                “INACTIVE”
+            Note: this field is not included with dynamic teams because they
+            are always active.
+        external_key (str, optional): Ids a resource in an external system.
+        externally_owned (bool, optional): True if the object is managed by an
+            external system. False by default.
+            A field is externally owned when it is managed by an external
+            system. Externally-owned objects cannot be deleted in the xMatters
+            user interface by most users.
+        locked (:obj:`list` of :obj:`str`, optional): A list of fields that
+            cannot be modified in the xMatters user interface.
+        links (:obj:`SelfLink`, optional): A link that can be used to access the
+            object from within the API. This link is not included with Dynamic
+            Team Recipients because they cannot yet be directly manipulated with
+            this API.
 
     Attributes:
         id (str): A unique identifier that represents the recipient.
@@ -153,6 +182,12 @@ class Recipient(object):
             “PEOPLE”
             “DEVICE”
             “DYNAMIC_TEAM”
+        status (str): Whether the recipient is active. Inactive recipients do
+            not receive notifications. Use one of the following values:
+                “ACTIVE”
+                “INACTIVE”
+            Note: this field is not included with dynamic teams because they
+            are always active.
         external_key (str): Identifies a resource in an external system.
         externally_owned (bool): True if the object is managed by an external
             system. False by default.
@@ -161,12 +196,6 @@ class Recipient(object):
             user interface by most users.
         locked (:obj:`list` of :obj:`str`): A list of fields that cannot be
             modified in the xMatters user interface.
-        status (str): Whether the recipient is active. Inactive recipients do
-            not receive notifications. Use one of the following values:
-                “ACTIVE”
-                “INACTIVE”
-            Note: this field is not included with dynamic teams because they
-            are always active.
         links (:obj:`SelfLink`): A link that can be used to access the object
             from within the API. This link is not included with Dynamic Team
             Recipients because they cannot yet be directly manipulated with
@@ -182,13 +211,13 @@ class Recipient(object):
         new_obj.recipient_type = (
             json_self['recipientType']
             if 'recipientType' in json_self else None)
+        new_obj.status = json_self['status'] if 'status' in json_self else None
         new_obj.external_key = (
             json_self['externalKey'] if 'externalKey' in json_self else None)
         new_obj.externally_owned = (
             json_self['externallyOwned']
             if 'externallyOwned' in json_self else False)
         new_obj.locked = json_self['locked'] if 'locked' in json_self else []
-        new_obj.status = json_self['status'] if 'status' in json_self else None
         new_obj.links = (
             SelfLink.from_json_obj(json_self['links'])
             if 'links' in json_self else SelfLink())
@@ -222,15 +251,18 @@ class Recipient(object):
         obj = json.loads(json_self)
         return cls.from_json_obj(obj)
 
-    def __init__(self):
-        self.id: str = None
-        self.target_name: str = None
-        self.recipient_type: str = None
-        self.external_key: str = None
-        self.externally_owned: bool = None
-        self.locked: [str] = []
-        self.status: str = None
-        self.links: SelfLink = SelfLink()
+    def __init__(self, ref_id: str, target_name: str, recipient_type: str,
+                 status: str, external_key: str = None,
+                 externally_owned: bool = None, locked: [str] = [],
+                 links: SelfLink = None):
+        self.id: str = ref_id
+        self.target_name: str = target_name
+        self.recipient_type: str = recipient_type
+        self.external_key: str = external_key
+        self.externally_owned: bool = externally_owned
+        self.locked: [str] = locked
+        self.status: str = status
+        self.links: SelfLink = links
 
 class DynamicTeam(Recipient):
     """xMatters DynamicTeam representation
